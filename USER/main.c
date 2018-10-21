@@ -70,7 +70,7 @@ static int push_data_func(unsigned char * push_data , int push_length)
 	
 	conv_hex_2_string((unsigned char*)push_data,push_length,(char*)hexbuffer);
 
-	sprintf((char*)sbuffer,"AT+QSOSEND=0,512,");
+	sprintf((char*)sbuffer,"AT+QLWDATASEND=0,512,");
 	strcat((char*)sbuffer,(char*)hexbuffer);
 	
 	if(push_length < 512)
@@ -212,33 +212,33 @@ int main(void)
 		{
 			char *tmpstr;
 			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QSOCON=0,17788,\"120.79.63.76\"\r\n");
+			snprintf(tmpstr,128,"%s","AT+QLWSERV=120.79.63.76,17788\r\n");
 			memset(recvbuf,0x0,RECV_BUF_LEN);
 			uart_data_write(tmpstr,strlen(tmpstr),0);
 			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 			free(tmpstr);
 		}
 		
-//		{
-//			char *tmpstr;
-//			tmpstr = (char*)malloc(128);
-//			snprintf(tmpstr,128,"AT+QLWCONF=\"%s\"\r\n",MYDEVICEID);
-//			memset(recvbuf,0x0,RECV_BUF_LEN);
-//			uart_data_write(tmpstr,strlen(tmpstr),0);
-//			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-//			free(tmpstr);
-//		}
+		{
+			char *tmpstr;
+			tmpstr = (char*)malloc(128);
+			snprintf(tmpstr,128,"AT+QLWCONF=\"%s\"\r\n",MYDEVICEID);
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write(tmpstr,strlen(tmpstr),0);
+			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+			free(tmpstr);
+		}
 		
-//		{
-//			//AT+QLWCONF?\r\n
-//			char *tmpstr;
-//			tmpstr = (char*)malloc(128);
-//			snprintf(tmpstr,128,"%s","AT+QLWCONF?\r\n");
-//			memset(recvbuf,0x0,RECV_BUF_LEN);
-//			uart_data_write(tmpstr,strlen(tmpstr),0);
-//			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-//			free(tmpstr);
-//		}
+		{
+			//AT+QLWCONF?\r\n
+			char *tmpstr;
+			tmpstr = (char*)malloc(128);
+			snprintf(tmpstr,128,"%s","AT+QLWCONF?\r\n");
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write(tmpstr,strlen(tmpstr),0);
+			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+			free(tmpstr);
+		}
 		
 		{
 			char *tmpstr;
@@ -292,13 +292,13 @@ int main(void)
 		utimer_sleep(4000);
 		
 		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSOCL=0\r\n", strlen("AT+QSOCL=0\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);		
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
+//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//		
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("AT+QSOCL=0\r\n", strlen("AT+QSOCL=0\r\n"), 0);
+//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);		
 			
 		
 		
