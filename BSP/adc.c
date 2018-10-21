@@ -5,7 +5,7 @@
 
 #define ADC1_DR_Address    ((unsigned int)0x4001244C)
 
-void adc_init_temp_sensor()
+void adc_init_temp_sensor(void)
 {
 	//#define ADC1_DR_Address    ((u32)0x4001244C)
 	ADC_InitTypeDef ADC_InitStructure;
