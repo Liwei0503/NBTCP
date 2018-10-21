@@ -4,8 +4,8 @@
 #include "ledctl.h"
 #include "common.h"
 #include "ov2640api.h"
+#include "BC26/bc26.h"
 #include "JSON/cjson.h"
-#include "BC95/neul_bc95.h"
 #include "BASE64/cbase64.h"
 
 

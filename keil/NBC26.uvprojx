@@ -437,14 +437,14 @@
               <FilePath>..\BSP\eum_uart.c</FilePath>
             </File>
             <File>
-              <FileName>neul_bc95.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\BC95\neul_bc95.c</FilePath>
-            </File>
-            <File>
               <FileName>RTC_Time.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\RTC_Time.c</FilePath>
+            </File>
+            <File>
+              <FileName>bc26.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\BC26\bc26.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1084,14 +1084,14 @@
               <FilePath>..\BSP\eum_uart.c</FilePath>
             </File>
             <File>
-              <FileName>neul_bc95.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\BC95\neul_bc95.c</FilePath>
-            </File>
-            <File>
               <FileName>RTC_Time.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\RTC_Time.c</FilePath>
+            </File>
+            <File>
+              <FileName>bc26.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\BC26\bc26.c</FilePath>
             </File>
           </Files>
         </Group>

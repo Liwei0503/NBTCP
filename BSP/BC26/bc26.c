@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "neul_bc95.h"
+#include "BC26/bc26.h"
 
 #define NEUL_MAX_BUF_SIZE 1064
 #define NEUL_MAX_SOCKETS 1 					//the max udp socket links
