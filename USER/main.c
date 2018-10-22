@@ -1,12 +1,11 @@
 
 #include <stdio.h>
 #include "main.h"
-#include "ledctl.h"
-#include "common.h"
 #include "ov2640api.h"
 #include "BC26/bc26.h"
-#include "JSON/cjson.h"
 #include "BASE64/cbase64.h"
+#include "JSON/cjson.h"
+#include "ledctl.h"
 
 
 static char MYDEVICEID[32] = "000000000000000f";
@@ -16,7 +15,7 @@ static int make_json_data(char *oustr)
 	
 	char * p = 0;
 	cJSON * pJsonRoot = NULL;
-	char tmpstr[128];
+	char tmpstr[32];
  
 
 	pJsonRoot = cJSON_CreateObject();
@@ -32,8 +31,7 @@ static int make_json_data(char *oustr)
 	cJSON_AddStringToObject(pJsonRoot, "ONLINE", "online");
 	cJSON_AddStringToObject(pJsonRoot, "TIME", "2018.8");
 	cJSON_AddStringToObject(pJsonRoot, "STATUS", "ON");
-	snprintf(tmpstr,64,"Current Battery %d mV",read_vdd_voltage());
-	cJSON_AddStringToObject(pJsonRoot, "BODY", tmpstr );
+	cJSON_AddStringToObject(pJsonRoot, "BODY", "Current temperature 26'C");
 	
 	p = cJSON_Print(pJsonRoot);
 	
@@ -52,46 +50,17 @@ static int make_json_data(char *oustr)
 	return 0;
 }
 
-static int push_data_func(unsigned char * push_data , int push_length)
+static int make_send_data_str(char *outstr , unsigned char *data , int length)
 {
-	
-	int i = 0;
-	int ret;
-	int ret1 = -1;
-	int length;
-	int recvlen;
-
-	
-	char *sbuffer; //存储二进制裸数据
-	char *hexbuffer;
-	
-	sbuffer = malloc(1024 + 32);
-	hexbuffer = malloc(1024 + 32);
-	
-	conv_hex_2_string((unsigned char*)push_data,push_length,(char*)hexbuffer);
-
-	sprintf((char*)sbuffer,"AT+QLWDATASEND=0,512,");
-	strcat((char*)sbuffer,(char*)hexbuffer);
-	
-	if(push_length < 512)
-	{
-		for(i=0;i<(512 - push_length);i++)
-		{
-			strcat(sbuffer,"00");
-		}
-	}
-	strcat(sbuffer,",0x0000\r\n");
-	
-	printf("SEND TO BC26 STR: %s ]\r\n",sbuffer);
-	
-	uart_data_write(sbuffer, strlen(sbuffer), 0);
-	
-	free(sbuffer);
-	free(hexbuffer);
-	
-	return ret;
-
+	//AT+QSOSEND=0,5,3132333435\r\n
+	char *tmp = malloc(1024);
+	conv_hex_2_string((unsigned char*)data,length,tmp);
+	sprintf(outstr,"AT+QSOSEND=0,%d,%s\r\n",length,tmp);
+	free(tmp);
+	printf("SEND : %s \r\n",outstr);
+	return 0;
 }
+
 
 
 /*******************************************************************************
@@ -104,7 +73,7 @@ static int push_data_func(unsigned char * push_data , int push_length)
 *******************************************************************************/
 int main(void)
 {
-	NVIC_SetVectorTable(NVIC_VectTab_FLASH,(0x8000000+4));
+	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);
 	
@@ -126,9 +95,6 @@ int main(void)
 	
 	modem_poweron();
 	
-	vdd_5v_out(1);
-	vdd_3v3_out(1);
-	
 	
 	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
 	
@@ -143,15 +109,12 @@ int main(void)
 		char *jsonbuf = malloc(512);
 		
 		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CMEE=1\r\n", strlen("AT+CMEE=1\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
 		
 		/*
-		 * 发送ATI指令
+		 * 发送AT指令
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("ATI\r\n", strlen("AT\r\n"), 0);
+		uart_data_write("AT\r\n", strlen("AT\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		/*
@@ -161,13 +124,12 @@ int main(void)
 		uart_data_write("AT+CPSMS=1\r\n", strlen("AT+CPSMS=1\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
-	
 		/*
 		 * 关闭回显
 		 */
-//		memset(recvbuf,0x0,RECV_BUF_LEN);
-//		uart_data_write("ATE0\r\n", strlen("ATE0\r\n"), 0);
-//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("ATE0\r\n", strlen("ATE0\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 
 		/*
 		 * 获取信号值
@@ -177,130 +139,60 @@ int main(void)
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		/*
-		 * 获取设备ID IMEI
+		 * 获取设备ID
 		 */
-		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CGSN=1\r\n", strlen("AT+CGSN=1\r\n"), 0);
+		uart_data_write("AT+CIMI\r\n", strlen("AT+CIMI\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
-		if (strstr(recvbuf,"+CGSN:"))
-		{
-			MYDEVICEID[15]='f';
-			MYDEVICEID[16]=0;
-			memcpy(MYDEVICEID,recvbuf+9,15);
-			printf("IMEI: %s\r\n",MYDEVICEID);
+		{//读取设备ID
+			char * __tmp = strstr(recvbuf,"OK");
+			if (__tmp > 0)
+			{
+				__tmp -= 19;
+				int i=0;
+				for(i=0;i<15;i++)
+				{
+					MYDEVICEID[i] = __tmp[i];
+				}
+				MYDEVICEID[15] = 'f'; 
+				MYDEVICEID[16] = 0x0;
+				printf("IMSI : [%sr\n",MYDEVICEID);
+				//MYDEVICEID
+			}
 		}
 		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+CGSN\r\n", strlen("AT+CGSN\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
 		/*
-		 * 获取信号值 
+		 * 创建Socket
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
+		uart_data_write("AT+QSOC=1,2,1\r\n", strlen("AT+QSOC=1,2,1\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+QSOCON=0,39002,\"47.93.103.232\"\r\n", strlen("AT+QSOCON=0,39002,\"47.93.103.232\"\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
+		make_json_data(jsonbuf);
+		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write(atbuf,strlen(atbuf),0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+QSOCL=0\r\n", strlen("AT+QSOCL=0\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		
 		
 
-		/*
-		 * 链接电信云服务器
-		 */
-		{
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write("AT+QSOC=1,2,1\r\n", strlen("AT+QSOC=1,2,1\r\n"), 0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		}		
-		
-		{
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QLWSERV=120.79.63.76,17788\r\n");
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		{
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"AT+QLWCONF=\"%s\"\r\n",MYDEVICEID);
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		{
-			//AT+QLWCONF?\r\n
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QLWCONF?\r\n");
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		{
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QLWADDOBJ=19,0,1,\"0\"\r\n");
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		{
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QLWOPEN=0\r\n");
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		{
-			char *tmpstr;
-			tmpstr = (char*)malloc(128);
-			snprintf(tmpstr,128,"%s","AT+QLWCFG=\"dataformat\",1,1\r\n");
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			uart_data_write(tmpstr,strlen(tmpstr),0);
-			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-			free(tmpstr);
-		}
-		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QBAND?\r\n", strlen("AT+QBAND?\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
-		
-		{
-			char *tmp = malloc(512);
-			make_json_data(tmp);
-			memset(recvbuf,0x0,RECV_BUF_LEN);
-			push_data_func((unsigned char*)tmp,strlen(tmp));
-			
-			for(;;)
-			{
-				uart_data_read(recvbuf, RECV_BUF_LEN, 0, 2000);
-			}
-			free(tmp);
-		}
-		
-		printf("连接建立完毕，开始与电信平台交互数据，waiting 4 second................\r\n");
-		utimer_sleep(4000);
-		
-		
-//		memset(recvbuf,0x0,RECV_BUF_LEN);
-//		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
-//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-//		
-//		memset(recvbuf,0x0,RECV_BUF_LEN);
-//		uart_data_write("AT+QSOCL=0\r\n", strlen("AT+QSOCL=0\r\n"), 0);
-//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);		
-			
-		
 		
 		/*
 		释放内存
