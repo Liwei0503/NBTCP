@@ -97,7 +97,6 @@ int main(void)
 	
 	
 	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
-	
 	{
 		
 		/*
@@ -192,7 +191,12 @@ int main(void)
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		
-
+		/*
+		 * 发送ATI指令
+		 */
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("ATI\r\n", strlen("ATI\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		/*
 		释放内存
@@ -207,10 +211,10 @@ int main(void)
 	/*
 	 * 设置1小时之后再次启动并进入PSM模式
 	 */
-	RTC_SetAlarm(RTC_GetCounter() +  3600);
+	RTC_SetAlarm(RTC_GetCounter() +  36);
 
 	//进入休眠
-	utimer_sleep(2000);
+	utimer_sleep(200);
 	Sys_Enter_Standby();
 
 	return 0;
