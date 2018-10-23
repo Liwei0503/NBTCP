@@ -53,6 +53,7 @@ static int make_json_data(char *oustr)
 static int make_send_data_str(char *outstr , unsigned char *data , int length)
 {
 	//AT+QSOSEND=0,5,3132333435\r\n
+	
 	char *tmp = malloc(1024);
 	conv_hex_2_string((unsigned char*)data,length,tmp);
 	sprintf(outstr,"AT+QSOSEND=0,%d,%s\r\n",length,tmp);
@@ -95,7 +96,7 @@ int main(void)
 	
 	modem_poweron();
 	
-	
+	int ret;
 	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
 	{
 		
@@ -168,19 +169,31 @@ int main(void)
 		/*
 		 * 创建Socket
 		 */
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSOC=1,2,1\r\n", strlen("AT+QSOC=1,2,1\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
+		do{
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSOCON=0,39002,\"47.93.103.232\"\r\n", strlen("AT+QSOCON=0,39002,\"47.93.103.232\"\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		uart_data_write("AT+QSOC=1,1,1\r\n", strlen("AT+QSOC=1,1,1\r\n"), 0);
+		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		}while(ret!=255);
 		
-		make_json_data(jsonbuf);
-		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
+		do{
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write(atbuf,strlen(atbuf),0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		uart_data_write("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n", strlen("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n"), 0);
+		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
+		}while(ret!=255);
+
+		do{		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+ESOSEND=0,5,3234363840\r\n", strlen("AT+ESOSEND=0,5,1234567890\r\n"), 0);
+		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		}while(ret!=255);
+
+		
+//		make_json_data(jsonbuf);
+//		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write(atbuf,strlen(atbuf),0);
+//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
@@ -194,9 +207,9 @@ int main(void)
 		/*
 		 * 发送ATI指令
 		 */
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("ATI\r\n", strlen("ATI\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("ATI\r\n", strlen("ATI\r\n"), 0);
+//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		/*
 		释放内存
@@ -211,10 +224,10 @@ int main(void)
 	/*
 	 * 设置1小时之后再次启动并进入PSM模式
 	 */
-	RTC_SetAlarm(RTC_GetCounter() +  36);
+	RTC_SetAlarm(RTC_GetCounter() +  60);
 
 	//进入休眠
-	utimer_sleep(200);
+	utimer_sleep(20);
 	Sys_Enter_Standby();
 
 	return 0;

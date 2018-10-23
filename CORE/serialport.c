@@ -60,6 +60,7 @@ int uart_data_read(char *buf, int maxrlen, int mode, int timeout)
 	
 	ret:
 	printf("BC->ST : [%d] [%d] %s\r\n",uart2_rx_buffer_index,timeout,buf);
+	if(strstr(buf,"OK")!=NULL) return 255;
 	return uart2_rx_buffer_index;
 }
 //static int uart_data_write(const char *buf, int writelen, int mode)
