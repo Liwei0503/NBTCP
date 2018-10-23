@@ -96,7 +96,7 @@ int main(void)
 	
 	modem_poweron();
 	
-	int ret;
+	int ret,tst;
 	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
 	{
 		
@@ -169,7 +169,7 @@ int main(void)
 		/*
 		 * 创建Socket
 		 */
-		
+		tst=0;
 		do{
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+QSOC=1,1,1\r\n", strlen("AT+QSOC=1,1,1\r\n"), 0);
@@ -180,13 +180,15 @@ int main(void)
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n", strlen("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n"), 0);
 		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
-		}while(ret!=255);
+		tst++;
+		}while(ret!=255 && tst> 10);
 
 		do{		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+ESOSEND=0,5,3234363840\r\n", strlen("AT+ESOSEND=0,5,1234567890\r\n"), 0);
 		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		}while(ret!=255);
+		tst++;	
+		}while(ret!=255&& tst> 10);
 
 		
 //		make_json_data(jsonbuf);
