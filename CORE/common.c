@@ -1,7 +1,8 @@
-#include "common.h"
+
 #include <stdlib.h>
 #include "config_def.h"
 #include "mem.h"
+#include "common.h"
 
 void delayUS(unsigned int us)
 {

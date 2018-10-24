@@ -23,6 +23,7 @@ void init_uart2_buffer(void)
 int uart_data_read(char *buf, int maxrlen, int mode, int timeout)
 {
 	int timeo = 0;
+	char * back;
 	int history_rx_len = 0;
 	uart2_rx_buffer_index = 0;
 	#define DELAY_MS 20
@@ -54,13 +55,14 @@ int uart_data_read(char *buf, int maxrlen, int mode, int timeout)
 		{
 			memcpy(buf,uart2_rx_buffer,uart2_rx_buffer_index);
 			goto ret;
-		}
-		
+		}	
 	}
 	
 	ret:
 	printf("BC->ST : [%d] [%d] %s\r\n",uart2_rx_buffer_index,timeout,buf);
-	if(strstr(buf,"OK")!=NULL) return 255;
+//	back = strstr(buf,"+CSQ:");
+//	if(back !=NULL) printf("CSQ BACK: %s\r\n",back);
+//	if(strstr(buf,"OK")!=NULL) return 255;	
 	return uart2_rx_buffer_index;
 }
 //static int uart_data_write(const char *buf, int writelen, int mode)
@@ -68,7 +70,7 @@ int uart_data_write(char *buf, int writelen, int mode)
 {
 	int i=0;
 	
-	printf("ST->BC : %s\r\n",buf);
+	printf("ST(uart)->BC : %s\r\n",buf);
 	clear_uart2_buffer();
 	for(i=0;i<writelen;i++)
 	{

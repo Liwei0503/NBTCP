@@ -6,9 +6,11 @@
 #include "BASE64/cbase64.h"
 #include "JSON/cjson.h"
 #include "ledctl.h"
+#include "common.h"
 
-
-static char MYDEVICEID[32] = "000000000000000f";
+static char MYMICCID[42] =  "99900000000000000000";
+static char MYDEVICEID[32] = "460000000000000";
+static char RSSI[8] = "0000";
 
 static int make_json_data(char *oustr)
 {
@@ -16,22 +18,22 @@ static int make_json_data(char *oustr)
 	char * p = 0;
 	cJSON * pJsonRoot = NULL;
 	char tmpstr[32];
- 
+	uint32_t RTC_buff = RTC_GetCounter();	
 
 	pJsonRoot = cJSON_CreateObject();
 	if(NULL == pJsonRoot){return -1;}
 	
-
-	cJSON_AddNumberToObject(pJsonRoot, "VERSION", 1);
+	cJSON_AddStringToObject(pJsonRoot, "Vendor","Qitas");
+	cJSON_AddNumberToObject(pJsonRoot, "TIME SEED", RTC_buff);
 	//AT+CIMI
-	cJSON_AddStringToObject(pJsonRoot, "DEVID", MYDEVICEID);
-	cJSON_AddStringToObject(pJsonRoot, "FIRST", "BC26 BRD");
-	cJSON_AddStringToObject(pJsonRoot, "NAME", "bc26");
-	cJSON_AddStringToObject(pJsonRoot, "NUM", "100");
-	cJSON_AddStringToObject(pJsonRoot, "ONLINE", "online");
-	cJSON_AddStringToObject(pJsonRoot, "TIME", "2018.8");
-	cJSON_AddStringToObject(pJsonRoot, "STATUS", "ON");
-	cJSON_AddStringToObject(pJsonRoot, "BODY", "Current temperature 26'C");
+	cJSON_AddStringToObject(pJsonRoot, "DEVID",MYDEVICEID);
+	
+	cJSON_AddStringToObject(pJsonRoot, "MICCID", MYMICCID);
+	cJSON_AddStringToObject(pJsonRoot, "RSSI", RSSI);
+	cJSON_AddStringToObject(pJsonRoot, "NET", "Mobile");
+	cJSON_AddStringToObject(pJsonRoot, "STATUS","live");
+	cJSON_AddStringToObject(pJsonRoot, "INFO","WaterPressure 2600 kPa");
+	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.10.24");
 	
 	p = cJSON_Print(pJsonRoot);
 	
@@ -58,7 +60,7 @@ static int make_send_data_str(char *outstr , unsigned char *data , int length)
 	conv_hex_2_string((unsigned char*)data,length,tmp);
 	sprintf(outstr,"AT+QSOSEND=0,%d,%s\r\n",length,tmp);
 	free(tmp);
-	printf("SEND : %s \r\n",outstr);
+	//printf("SEND: %s \r\n",outstr);
 	return 0;
 }
 
@@ -114,9 +116,23 @@ int main(void)
 		 * 发送AT指令
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT\r\n", strlen("AT\r\n"), 0);
+		uart_data_write("AT+ZADC?\r\n", strlen("AT+ZADC?\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
+//		{
+//			char * __tmp = strstr(recvbuf,"OK");
+//			if (__tmp > 0)
+//			{
+//				__tmp -= 19;
+//				int i=0;
+//				for(i=0;i<15;i++)
+//				{
+//					MYDEVICEID[i] = __tmp[i];
+//				}
+//				//MYDEVICEID[15] = 'f'; 
+//				MYDEVICEID[16] = 0x0;
+//				printf("ZADC : [%s\r\n",MYDEVICEID);
+//			}
+//		}		
 		/*
 		 * 打开PSM
 		 */
@@ -136,16 +152,16 @@ int main(void)
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
+		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		memcpy(RSSI,uart2_rx_buffer+8,3);
+		printf("RSSI: %s\r\n",RSSI);
 		/*
 		 * 获取设备ID
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+CIMI\r\n", strlen("AT+CIMI\r\n"), 0);
-		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
-		{//读取设备ID
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
+		{
 			char * __tmp = strstr(recvbuf,"OK");
 			if (__tmp > 0)
 			{
@@ -155,47 +171,61 @@ int main(void)
 				{
 					MYDEVICEID[i] = __tmp[i];
 				}
-				MYDEVICEID[15] = 'f'; 
+				//MYDEVICEID[15] = 'f'; 
 				MYDEVICEID[16] = 0x0;
-				printf("IMSI : [%sr\n",MYDEVICEID);
-				//MYDEVICEID
+				printf("IMSI : [%s\r\n",MYDEVICEID);
 			}
 		}
 		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CGSN\r\n", strlen("AT+CGSN\r\n"), 0);
+		uart_data_write("AT*MICCID\r\n", strlen("AT*MICCID\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
+		{
+			char * __tmp = strstr(recvbuf,"OK");
+			if (__tmp > 0)
+			{
+				__tmp -= 24;
+				int i=0;
+				for(i=0;i<20;i++)
+				{
+					MYMICCID[i] = __tmp[i];
+				}
+				MYMICCID[20] = 0x0;
+				printf("MYMICCID : [%s\r\n",MYMICCID);
+			}
+		}		
 		/*
 		 * 创建Socket
 		 */
 		tst=0;
 		do{
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSOC=1,1,1\r\n", strlen("AT+QSOC=1,1,1\r\n"), 0);
-		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		}while(ret!=255);
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write("AT+QSOC=1,1,1\r\n", strlen("AT+QSOC=1,1,1\r\n"), 0);
+			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+			tst++;
+		}while(ret!=17 && tst < 10);
 		
 		do{
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n", strlen("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n"), 0);
-		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
-		tst++;
-		}while(ret!=255 && tst> 10);
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n", strlen("AT+QSOCON=0,17799,\"120.79.63.76\"\r\n"), 0);
+			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
+			tst++;
+		}while(ret!=0 && tst < 10);
 
-		do{		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+ESOSEND=0,5,3234363840\r\n", strlen("AT+ESOSEND=0,5,1234567890\r\n"), 0);
-		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		tst++;	
-		}while(ret!=255&& tst> 10);
+//		do{	
+//					
+//			memset(recvbuf,0x0,RECV_BUF_LEN);
+//			uart_data_write("AT+ESOSEND=0,5,3234363831\r\n", strlen("AT+ESOSEND=0,5,3234363831\r\n"), 0);
+//			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//			tst++;	
+//		}while(ret!=255&& tst> 10);
 
 		
-//		make_json_data(jsonbuf);
-//		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
-//		memset(recvbuf,0x0,RECV_BUF_LEN);
-//		uart_data_write(atbuf,strlen(atbuf),0);
-//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		make_json_data(jsonbuf);
+		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write(atbuf,strlen(atbuf),0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
