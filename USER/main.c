@@ -10,7 +10,7 @@
 
 static char MYMICCID[42] =  "99900000000000000000";
 static char MYDEVICEID[32] = "460000000000000";
-static char RSSI[8] = "0000";
+static char RSSI[] = "00000000000000000000000000000000";
 
 static int make_json_data(char *oustr)
 {
@@ -23,17 +23,15 @@ static int make_json_data(char *oustr)
 	pJsonRoot = cJSON_CreateObject();
 	if(NULL == pJsonRoot){return -1;}
 	
-	cJSON_AddStringToObject(pJsonRoot, "Vendor","Qitas");
-	cJSON_AddNumberToObject(pJsonRoot, "TIME SEED", RTC_buff);
-	//AT+CIMI
+	cJSON_AddNumberToObject(pJsonRoot, "TIME SEED ", RTC_buff);
 	cJSON_AddStringToObject(pJsonRoot, "DEVID",MYDEVICEID);
-	
 	cJSON_AddStringToObject(pJsonRoot, "MICCID", MYMICCID);
-	cJSON_AddStringToObject(pJsonRoot, "RSSI", RSSI);
-	cJSON_AddStringToObject(pJsonRoot, "NET", "Mobile");
-	cJSON_AddStringToObject(pJsonRoot, "STATUS","live");
-	cJSON_AddStringToObject(pJsonRoot, "INFO","WaterPressure 2600 kPa");
-	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.10.24");
+	cJSON_AddStringToObject(pJsonRoot, "RSSI ", RSSI);
+	cJSON_AddStringToObject(pJsonRoot, "INFO","2600KPa");
+	cJSON_AddStringToObject(pJsonRoot, "NET", "China Mobile");
+	cJSON_AddStringToObject(pJsonRoot, "STATUS", "live");
+	cJSON_AddStringToObject(pJsonRoot, "Auth ","Qitas");
+	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.11.14");
 	
 	p = cJSON_Print(pJsonRoot);
 	
@@ -79,12 +77,14 @@ int main(void)
 	
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);
-	
+
 	init_led();
 	SysTick_Config(SystemCoreClock / 100);
 	
 	init_uart1();
 	init_uart2();
+	
+	
 	RTC_Init();
 	SET_BOOTLOADER_STATUS(2);
 	WKUP_Pin_Init();
@@ -98,7 +98,8 @@ int main(void)
 	
 	modem_poweron();
 	
-	int ret,tst;
+	int tst;
+	
 	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
 	{
 		
@@ -109,7 +110,7 @@ int main(void)
 		char *recvbuf = malloc(RECV_BUF_LEN);
 		char *atbuf = malloc(1024);
 		char *jsonbuf = malloc(512);
-		
+		int ret=0,PTR=0;
 		
 		
 		/*
@@ -141,19 +142,43 @@ int main(void)
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
 		/*
-		 * 关闭回显
+		 * 关闭回显,涉及数据提取
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("ATE0\r\n", strlen("ATE0\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+CGPADDR=1\r\n", strlen("AT+CGPADDR=1\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		/*
 		 * 获取信号值
 		 */
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
 		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		memcpy(RSSI,uart2_rx_buffer+8,3);
+		if(strstr(recvbuf,"OK"))
+		{	
+			memcpy(RSSI,uart2_rx_buffer+8,ret-16);	
+			PTR=ret-16;
+			RSSI[PTR++] =':';
+			//printf("CSQ RSSI: %s\r\n",RSSI);
+
+		}
+		//memcpy(RSSI,uart2_rx_buffer+8,4);
+		//memset(RSSI+4,':',2);
+		//printf("CSQ RSSI: %s\r\n",RSSI);
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
+		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+		if(strstr(recvbuf,"OK"))
+		{	
+			memcpy(RSSI+PTR,uart2_rx_buffer+9,ret-17);		
+			PTR+=ret-17;
+			memset(RSSI+PTR,'.',32-PTR);							
+		}
+		//memcpy(RSSI+6,uart2_rx_buffer+9,20);
 		printf("RSSI: %s\r\n",RSSI);
 		/*
 		 * 获取设备ID
@@ -176,7 +201,28 @@ int main(void)
 				printf("IMSI : [%s\r\n",MYDEVICEID);
 			}
 		}
-		
+		/*
+		 * 获取设备ID
+		 */
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("AT+CGSN=1\r\n", strlen("AT+CGSN=1\r\n"), 0);
+//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
+//		{
+//			char * __tmp = strstr(recvbuf,"OK");
+//			if (__tmp > 0)
+//			{
+//				__tmp -= 19;
+//				int i=0;
+//				for(i=0;i<15;i++)
+//				{
+//					MYDEVICEID[i] = __tmp[i];
+//				}
+//				//MYDEVICEID[15] = 'f'; 
+//				MYDEVICEID[16] = 0x0;
+//				printf("IMEI : [%s\r\n",MYDEVICEID);
+//			}
+//		}
+				
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT*MICCID\r\n", strlen("AT*MICCID\r\n"), 0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
@@ -193,7 +239,15 @@ int main(void)
 				MYMICCID[20] = 0x0;
 				printf("MYMICCID : [%s\r\n",MYMICCID);
 			}
-		}		
+		}	
+		
+		/*
+		 * 获取设备ID IMEI
+		 */
+		
+		memset(recvbuf,0x0,RECV_BUF_LEN);
+		uart_data_write("AT+CGSN=1\r\n", strlen("AT+CGSN=1\r\n"), 0);
+		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);		
 		/*
 		 * 创建Socket
 		 */
@@ -251,15 +305,15 @@ int main(void)
 		free(jsonbuf);
 	}
 	
-	printf("Sys_Enter_Standby CurrentTim %d\r\n",RTC_GetCounter());
+	printf("CurrentTim %d\r\n",RTC_GetCounter());
 	
 	/*
-	 * 设置1小时之后再次启动并进入PSM模式
+	 * 设置2 min之后再次启动并进入PSM模式
 	 */
-	RTC_SetAlarm(RTC_GetCounter() +  60);
+	RTC_SetAlarm(RTC_GetCounter() + 120);
 
 	//进入休眠
-	utimer_sleep(20);
+	utimer_sleep(10);
 	Sys_Enter_Standby();
 
 	return 0;

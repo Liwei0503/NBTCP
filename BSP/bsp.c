@@ -118,10 +118,7 @@ void modem_poweron(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-  MODEM_POWER_RCC_TYPE( MODEM_POEWR_RCC , ENABLE); 						 
-  /**
-  *  LED1 -> PF6 , LED2 -> PF7 , LED3 -> PF8 , LED4 -> PF9
-  */					 
+  MODEM_POWER_RCC_TYPE( MODEM_POEWR_RCC , ENABLE); 						 				 
   GPIO_InitStructure.GPIO_Pin =  MODEM_POEWR_PIN;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD; 
