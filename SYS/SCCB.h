@@ -1,7 +1,8 @@
 #ifndef _SCCB_H
 #define _SCCB_H
 
-# include <stm32f0xx.h>
+#include "stm32f10x.h"
+//# include <stm32f0xx.h>
 
 #define SCCB_ID 0x60
 

@@ -5,7 +5,7 @@
 #include "BC26/BC26.h"
 #include "BASE64/cbase64.h"
 #include "JSON/cjson.h"
-#include "ledctl.h"
+//#include "ledctl.h"
 #include "common.h"
 
 static char MYMICCID[42] =  "99900000000000000000";
@@ -78,7 +78,7 @@ int main(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable,ENABLE);
 
-	init_led();
+	//init_led();
 	SysTick_Config(SystemCoreClock / 100);
 	
 	init_uart1();
@@ -94,7 +94,7 @@ int main(void)
 	init_mem();
 	init_uart2_buffer();
 	
-	LED_NETWORK_REGISTER_STATUS;
+	//LED_NETWORK_REGISTER_STATUS;
 	
 	modem_poweron();
 	

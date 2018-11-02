@@ -137,7 +137,7 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
 	extern void led_routing_func(void);
-	led_routing_func();
+	//led_routing_func();
 	systick_handle();
 	
 }
