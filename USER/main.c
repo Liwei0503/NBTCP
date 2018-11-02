@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "main.h"
 #include "ov2640api.h"
-#include "BC26/bc26.h"
+#include "BC26/BC26.h"
 #include "BASE64/cbase64.h"
 #include "JSON/cjson.h"
 #include "ledctl.h"
