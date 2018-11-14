@@ -171,32 +171,41 @@ int main(void)
 		/*
 		 * 获取信号值
 		 */
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
-		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		if(strstr(recvbuf,"OK"))
-		{	
-			memcpy(RSSI,uart2_rx_buffer+8,ret-16);	
-			PTR=ret-16;
-			RSSI[PTR++] =':';
-			//printf("CSQ RSSI: %s\r\n",RSSI);
+		 int cnt=0;
+		do{
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
+			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+			if(strstr(recvbuf,"OK"))
+			{	
+				memcpy(RSSI,uart2_rx_buffer+8,ret-16);	
+				PTR=ret-16;
+				RSSI[PTR++] =' ';
+				RSSI[PTR++] =' ';
+				//printf("CSQ RSSI: %s\r\n",RSSI);
 
-		}
-		//memcpy(RSSI,uart2_rx_buffer+8,4);
-		//memset(RSSI+4,':',2);
-		//printf("CSQ RSSI: %s\r\n",RSSI);
-		
-		memset(recvbuf,0x0,RECV_BUF_LEN);
-		uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
-		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		if(strstr(recvbuf,"OK"))
-		{	
-			memcpy(RSSI+PTR,uart2_rx_buffer+9,ret-17);		
-			PTR+=ret-17;
-			memset(RSSI+PTR,'.',32-PTR);							
-		}
+			}
+			//memcpy(RSSI,uart2_rx_buffer+8,4);
+			//memset(RSSI+4,':',2);
+			//printf("CSQ RSSI: %s\r\n",RSSI);
+			
+			memset(recvbuf,0x0,RECV_BUF_LEN);
+			uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
+			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+			if(strstr(recvbuf,"OK"))
+			{	
+				memcpy(RSSI+PTR,uart2_rx_buffer+9,ret-17);		
+				PTR+=ret-17;
+				memset(RSSI+PTR,'.',32-PTR);							
+			}
+			cnt++;
+			if(cnt>1) utimer_sleep(500);
+		}while(ret==21 && cnt<5);
 		//memcpy(RSSI+6,uart2_rx_buffer+9,20);
 		printf("RSSI: %s\r\n",RSSI);
+
+
+
 		/*
 		 * 获取设备ID
 		 */
@@ -290,6 +299,75 @@ int main(void)
 //			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 //			tst++;	
 //		}while(ret!=255&& tst> 10);
+
+
+//		   int cnt=0;
+//		   do{
+//				/*
+//				 * 获取信号值CSQ
+//				 */
+//				memset(recvbuf,0x0,RECV_BUF_LEN);
+//				uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
+//				ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);	
+//				if(strstr(recvbuf,"OK"))
+//				{
+//					memcpy(RSSI,uart2_rx_buffer+8,ret-16);	
+//					PTR=ret-16;
+//					RSSI[PTR++] =' ';
+//				}
+//				cnt++;
+//				if(cnt>1) utimer_sleep(1000);
+//			}while(ret==21 && cnt<5);
+//			/*
+//			 * 获取信号值CESQ
+//			 */
+//			memset(recvbuf,0x0,RECV_BUF_LEN);
+//			uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
+//			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//			
+//			if(strstr(recvbuf,"OK"))
+//			{	
+//				memcpy(RSSI+PTR,uart2_rx_buffer+9,ret-17);		
+//				PTR+=ret-17;
+//				memset(RSSI+PTR,'.',27-PTR);					
+//			}
+//			char *p;
+//			while((p = strchr(RSSI,','))!=NULL)
+//			{
+//				*p=':';
+//			}
+//			printf("RSSI: %s\r\n",RSSI);	
+			
+			
+		/*
+		 * 获取信号值
+		 */
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("AT+CSQ\r\n", strlen("AT+CSQ\r\n"), 0);
+//		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//		if(strstr(recvbuf,"OK"))
+//		{	
+//			memcpy(RSSI,uart2_rx_buffer+8,ret-16);	
+//			PTR=ret-16;
+//			RSSI[PTR++] =':';
+//			//printf("CSQ RSSI: %s\r\n",RSSI);
+
+//		}
+//		//memcpy(RSSI,uart2_rx_buffer+8,4);
+//		//memset(RSSI+4,':',2);
+//		//printf("CSQ RSSI: %s\r\n",RSSI);
+//		
+//		memset(recvbuf,0x0,RECV_BUF_LEN);
+//		uart_data_write("AT+CESQ\r\n", strlen("AT+CESQ\r\n"), 0);
+//		ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
+//		if(strstr(recvbuf,"OK"))
+//		{	
+//			memcpy(RSSI+PTR,uart2_rx_buffer+9,ret-17);		
+//			PTR+=ret-17;
+//			memset(RSSI+PTR,'.',32-PTR);							
+//		}
+//		//memcpy(RSSI+6,uart2_rx_buffer+9,20);
+//		printf("RSSI: %s\r\n",RSSI);			
 		
 		DURcnt = RTC_GetCounter()- startcnt;
 		make_json_data(jsonbuf);
