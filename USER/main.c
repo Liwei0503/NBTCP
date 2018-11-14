@@ -98,9 +98,20 @@ int main(void)
 	
 	modem_poweron();
 	
-	int tst;
+	uint32_t startcnt = RTC_GetCounter();
+	uint32_t DURcnt=0;	
 	
-	while(neul_bc26_get_netstat()<0){};										//等待连接上网络
+	int tst;
+	uint8_t search=0;
+	while(neul_bc26_get_netstat()<0 && search< 50)
+	{
+		utimer_sleep(200);//等待连接上网络
+		led0_off();
+		utimer_sleep(200);//等待连接上网络
+		led0_on();	
+		search++;		
+	}
+	//while(neul_bc26_get_netstat()<0){};										//等待连接上网络
 	{
 		
 		/*
@@ -310,8 +321,9 @@ int main(void)
 	/*
 	 * 设置2 min之后再次启动并进入PSM模式
 	 */
-	RTC_SetAlarm(RTC_GetCounter() + 120);
-
+	//RTC_SetAlarm(RTC_GetCounter() + 120);
+	DURcnt = RTC_GetCounter() - startcnt;
+	RTC_SetAlarm(RTC_GetCounter()+ (58-DURcnt));
 	//进入休眠
 	utimer_sleep(10);
 	Sys_Enter_Standby();
