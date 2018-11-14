@@ -12,6 +12,9 @@ static char MYMICCID[42] =  "99900000000000000000";
 static char MYDEVICEID[32] = "460000000000000";
 static char RSSI[] = "00000000000000000000000000000000";
 
+uint32_t DURcnt;	
+uint32_t startcnt;
+
 static int make_json_data(char *oustr)
 {
 	
@@ -23,14 +26,16 @@ static int make_json_data(char *oustr)
 	pJsonRoot = cJSON_CreateObject();
 	if(NULL == pJsonRoot){return -1;}
 	
-	cJSON_AddNumberToObject(pJsonRoot, "TIME SEED ", RTC_buff);
+	cJSON_AddStringToObject(pJsonRoot, "RSSI ", RSSI);
+	cJSON_AddNumberToObject(pJsonRoot, "TIME SED", startcnt);
+	cJSON_AddNumberToObject(pJsonRoot, "TIME DIV", DURcnt);
 	cJSON_AddStringToObject(pJsonRoot, "DEVID",MYDEVICEID);
 	cJSON_AddStringToObject(pJsonRoot, "MICCID", MYMICCID);
-	cJSON_AddStringToObject(pJsonRoot, "RSSI ", RSSI);
-	cJSON_AddStringToObject(pJsonRoot, "INFO","2600KPa");
-	cJSON_AddStringToObject(pJsonRoot, "NET", "China Mobile");
-	cJSON_AddStringToObject(pJsonRoot, "Auth ","Qitas");
-	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.11.15");
+//	
+//	cJSON_AddStringToObject(pJsonRoot, "INFO","2600KPa");
+//	cJSON_AddStringToObject(pJsonRoot, "NET", "China Mobile");
+//	cJSON_AddStringToObject(pJsonRoot, "Auth ","Qitas");
+//	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.11.15");
 	
 	p = cJSON_Print(pJsonRoot);
 	
@@ -97,10 +102,12 @@ int main(void)
 	
 	modem_poweron();
 	
-	uint32_t startcnt = RTC_GetCounter();
-	uint32_t DURcnt=0;	
 	
+
+		
 	int tst;
+	startcnt = RTC_GetCounter();
+	DURcnt=0;
 	uint8_t search=0;
 	while(neul_bc26_get_netstat()<0 && search< 50)
 	{
@@ -283,8 +290,8 @@ int main(void)
 //			ret = uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 //			tst++;	
 //		}while(ret!=255&& tst> 10);
-
 		
+		DURcnt = RTC_GetCounter()- startcnt;
 		make_json_data(jsonbuf);
 		make_send_data_str(atbuf,(unsigned char*)jsonbuf,strlen(jsonbuf));
 		memset(recvbuf,0x0,RECV_BUF_LEN);
