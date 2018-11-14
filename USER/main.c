@@ -21,12 +21,9 @@ static int make_json_data(char *oustr)
 	char * p = 0;
 	cJSON * pJsonRoot = NULL;
 	char tmpstr[32];
-	uint32_t RTC_buff = RTC_GetCounter();	
-
 	pJsonRoot = cJSON_CreateObject();
 	if(NULL == pJsonRoot){return -1;}
-	
-	cJSON_AddStringToObject(pJsonRoot, "RSSI ", RSSI);
+	cJSON_AddStringToObject(pJsonRoot, "NO.1 RSSI", RSSI);
 	cJSON_AddNumberToObject(pJsonRoot, "TIME SED", startcnt);
 	cJSON_AddNumberToObject(pJsonRoot, "TIME DIV", DURcnt);
 	cJSON_AddStringToObject(pJsonRoot, "DEVID",MYDEVICEID);
@@ -376,33 +373,6 @@ int main(void)
 		uart_data_write(atbuf,strlen(atbuf),0);
 		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
 		
-//		{
-//			char *tmpstr;
-//			char tmp[4];
-//			tmpstr = (char*)malloc(128);
-//			uint32_t RTCcnt = RTC_GetCounter();
-//			sprintf(tmp,"%04X",RTCcnt);
-//			printf("RTCcnt: %s\r\n",tmp);	
-//			//strcpy(RSSI+28,tmp);
-//			//strcat(RSSI,tmp);
-//			RSSI[24]=' ';
-//			RSSI[25]=tmp[0];
-//			RSSI[26]=tmp[1];
-//			RSSI[27]=tmp[2];
-//			RSSI[28]=tmp[3];
-//			RSSI[29]='-';
-//			DURcnt = RTCcnt - startcnt;
-//			sprintf(tmp,"%04X",DURcnt);
-//			printf("time cnt: %s\r\n",tmp);				
-//			RSSI[30]=tmp[2];
-//			RSSI[31]=tmp[3];
-//			sprintf((char*)tmpstr,"AT+QSOSEND=0,32,%32s\r\n",RSSI);
-//			//sprintf((char*)tmpstr,"AT+QLWDATASEND=19,0,0,32,%32s,0x0000\r\n", RSSI);
-//			uart_data_write(tmpstr,strlen(tmpstr),0);			
-//			memset(recvbuf,0x0,RECV_BUF_LEN);
-//			uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-//			free(tmpstr);
-//		}
 		
 		memset(recvbuf,0x0,RECV_BUF_LEN);
 		uart_data_write("AT+QSODIS=0\r\n", strlen("AT+QSODIS=0\r\n"), 0);
@@ -429,7 +399,8 @@ int main(void)
 	}
 	
 	printf("CurrentTim %d\r\n",RTC_GetCounter());
-	
+	modem_poweroff();
+	led0_off();
 	/*
 	 * 设置2 min之后再次启动并进入PSM模式
 	 */
