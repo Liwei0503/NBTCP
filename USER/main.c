@@ -75,7 +75,7 @@ char * make_sure(char *sendstr , char *backmark , int tst)
 						free(recbuf);
 						return restr+strlen(backmark);
 					}
-					if(strstr(recbuf,"ERROR")!=NULL) break;
+					if(strstr(recbuf,"ERROR")!=NULL) printf("$$$ error\r\n");
 				}
 			}			
 		}
@@ -126,11 +126,11 @@ int sleep(uint32_t mins)
 *******************************************************************************/
 int main(void)
 {	
-	char *res;
+	char *res,*ptr;
 	init();
 	timeflag = RTC_GetCounter();	
 		
-		res = make_sure("AT+CGATT?\r\n", "+CGATT: 1", 20);
+		res = make_sure("AT+CGATT?\r\n", "+CGATT: 1", 40);
 		res = make_sure("AT+CPSMS=1\r\n", "OK", 1);
 		res = make_sure("AT+CPIN?\r\n", "+CPIN: READY", 1);
 		if(res==NULL) printf("NO SIM card\r\n");
@@ -159,8 +159,8 @@ int main(void)
 //		res = make_sure("AT+CIMI\r\n", "OK", 1);
 		
 		res = make_sure("AT+CGPADDR=?\r\n", "+CGPADDR:", 1);
-		
-		printf("*** CGPADDR:%s\r\n",res);
+		ptr = strchr(res,'(');
+		printf("*** CGPADDR:%s\r\n",ptr);
 		
 		res = make_sure("AT+CSQ\r\n", "+CSQ:", 5);
 		printf("CSQ : %s\r\n",res);
@@ -186,7 +186,8 @@ int main(void)
 		res = make_sure("AT+QICFG=\"viewmode\",1\r\n", "OK", 1);
 
 		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "+QIURC:", 5);
-        printf(" *****command:%s\r\n",res);
+		
+        printf(" *****command:%s\r\n",strstr(res,"recv"));
 		
 		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE", 1);
 		
