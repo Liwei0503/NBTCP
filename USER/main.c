@@ -74,11 +74,13 @@ char * make_sure(char *sendstr , char *backmark , int tst)
 						printf("recv %d: %s\r\n",tst,restr);	
 						free(recbuf);
 						return restr+strlen(backmark);
-					}				
+					}
+					if(strstr(recbuf,"ERROR")!=NULL) break;
 				}
 			}			
 		}
 		free(recbuf);
+		return NULL;
 		
 }
 
@@ -104,16 +106,6 @@ int init(void)
 }
 
 
-int innet(uint32_t tst)
-{
-	for(int i =0 ;i<tst;i++)
-	{	
-		if(neul_bc26_get_netstat()>0) return 0;
-		utimer_sleep(200);
-	}
-}
-
-
 int sleep(uint32_t mins)
 {
 	modem_poweroff();
@@ -136,22 +128,12 @@ int main(void)
 {	
 	char *res;
 	init();
-	timeflag = RTC_GetCounter();
-	innet(40);		
+	timeflag = RTC_GetCounter();	
 		
-//		/*
-//		 * 发送ATI指令
-//		 */
-//		memset(recvbuf,0x0,RECV_BUF_LEN);
-//		uart_data_write("ATI\r\n", strlen("ATI\r\n"), 0);
-//		uart_data_read(recvbuf, RECV_BUF_LEN, 0, 200);
-		
-		/*
-		 * 打开PSM
-		 */ 
-		
+		res = make_sure("AT+CGATT?\r\n", "+CGATT: 1", 20);
 		res = make_sure("AT+CPSMS=1\r\n", "OK", 1);
-		res = make_sure("AT+CPIN?\r\n", "+CPIN", 1);
+		res = make_sure("AT+CPIN?\r\n", "+CPIN: READY", 1);
+		if(res==NULL) printf("NO SIM card\r\n");
 
 #ifdef DEBUG
 		/*
@@ -203,10 +185,10 @@ int main(void)
 
 		res = make_sure("AT+QICFG=\"viewmode\",1\r\n", "OK", 1);
 
-		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "+QIURC", 5);
+		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "+QIURC:", 5);
         printf(" *****command:%s\r\n",res);
 		
-		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE OK", 1);
+		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE", 1);
 		
 	sleep(1);	
 	utimer_sleep(10);
