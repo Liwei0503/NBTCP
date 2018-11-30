@@ -23,5 +23,4 @@ void watch_dog_config(void)
 void feed_watchdog(void)
 {
 	IWDG_ReloadCounter();
-	//
 }
