@@ -10,6 +10,7 @@ class TestRequestHandler(SocketServer.BaseRequestHandler):
             if len(data) == 0:
                 break
             log = '[%s:%s] %s' % (self.client_address, ctime(), data)
+            self.request.sendall("testnb")
             with open('/mnt/shell/nblog.txt', 'a') as f:
                 f.write(log+"\r\n")
             print log
