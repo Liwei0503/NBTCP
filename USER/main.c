@@ -16,42 +16,6 @@ static char MYMICCID[] = "89860404191880091918";
 static char RSSI[] = "000000000000000000000000000     ";
 static uint32_t timeflag =0;
 
-//static int make_json_data(char *oustr)
-//{
-//	
-//	char * p = 0;
-//	cJSON * pJsonRoot = NULL;
-//	char tmpstr[32];
-//	pJsonRoot = cJSON_CreateObject();
-//	if(NULL == pJsonRoot){return -1;}
-//	cJSON_AddStringToObject(pJsonRoot, "NO.1 RSSI", RSSI);
-//	cJSON_AddNumberToObject(pJsonRoot, "TIME SED", startcnt);
-//	cJSON_AddNumberToObject(pJsonRoot, "TIME DIV", DURcnt);
-//	cJSON_AddStringToObject(pJsonRoot, "DEVID",DEVICEID);
-//	cJSON_AddStringToObject(pJsonRoot, "MICCID", MYMICCID);
-//	cJSON_AddStringToObject(pJsonRoot, "TIME","2018.11.29");	
-//	p = cJSON_Print(pJsonRoot);	
-//	if(NULL == p)
-//	{
-//		cJSON_Delete(pJsonRoot);
-//		return -1;
-//	}
-//	cJSON_Delete(pJsonRoot);
-//	sprintf(oustr,"%s",p);
-//	printf("JSON:%s\r\n",oustr);	
-//	free(p);
-//	return 0;
-//}
-
-//static int make_send_data_str(char *outstr , unsigned char *data , int length)
-//{	
-//	char *tmp = malloc(1024);
-//	conv_hex_2_string((unsigned char*)data,length,tmp);
-//	sprintf(outstr,"AT+QSOSEND=0,%d,%s\r\n",length,tmp);
-//	free(tmp);
-//	//printf("SEND: %s \r\n",outstr);
-//	return 0;
-//}
 
 
 char * make_sure(char *sendstr , char *backmark , int tst)
@@ -62,7 +26,7 @@ char * make_sure(char *sendstr , char *backmark , int tst)
 		for(int i =0 ;i<tst;i++)
 		{					
 			uart_data_write(sendstr, strlen(sendstr), 0);	
-			for(int i =0 ;i<10;i++)
+			for(int i =0 ;i<20;i++)
 			{	
 				memset(recbuf,0x0,RECV_BUF_LEN);					
 				rets = uart_data_read(recbuf, RECV_BUF_LEN, 0, 200);
@@ -81,9 +45,31 @@ char * make_sure(char *sendstr , char *backmark , int tst)
 		}
 		free(recbuf);
 		return NULL;
-		
 }
 
+char * recv_sure(char *mark , int tst)
+{	
+		char *recbuf = malloc(RECV_BUF_LEN);		
+		int rets =0;	
+		for(int i =0 ;i<tst;i++)
+		{					
+			memset(recbuf,0x0,RECV_BUF_LEN);					
+			rets = uart_data_read(recbuf, RECV_BUF_LEN, 0, 200);
+			if(rets)
+			{
+				char *restr = strstr(recbuf,mark);				
+				if(restr!=NULL)
+				{
+					printf("recv %d: %s\r\n",tst,restr);	
+					free(recbuf);
+					return restr+strlen(mark);
+				}
+				if(strstr(recbuf,"ERROR")!=NULL) printf("error\r\n");
+			}		
+		}
+		free(recbuf);
+		return NULL;
+}
 
 int init(void)
 {
@@ -127,6 +113,7 @@ int sleep(uint32_t mins)
 int main(void)
 {	
 	char *res,*ptr;
+	char *str;
 	init();
 	timeflag = RTC_GetCounter();	
 		
@@ -136,23 +123,16 @@ int main(void)
 		if(res==NULL) printf("NO SIM card\r\n");
 
 #ifdef DEBUG
-		/*
-		 * echo mode
-		 */
 		res = make_sure("ATE1\r\n", "OK", 1);
 #else
-		/*
-		 * ¹Ø±Õ»ØÏÔ
-		 */
 		res = make_sure("ATE0\r\n", "OK", 1);
 #endif
-
-		res = make_sure("AT+CGSN=1\r\n", "+CGSN:", 1);
+		res = make_sure("AT+CGSN=1\r\n", "+CGSN: ", 1);
 		printf("IMEI : %s\r\n",res);
 		memcpy(DEVICEID,res,strlen(DEVICEID));
 		printf("DEVICEID:%s\r\n",DEVICEID);
 	
-		res = make_sure("AT*MICCID\r\n", "*MICCID:", 1);
+		res = make_sure("AT*MICCID\r\n", "*MICCID: ", 1);
 		memcpy(MYMICCID,res,strlen(MYMICCID));
 		printf("MYMICCID:%s\r\n",MYMICCID);
 
@@ -160,7 +140,10 @@ int main(void)
 		
 		res = make_sure("AT+CGPADDR=?\r\n", "+CGPADDR:", 1);
 		ptr = strchr(res,'(');
-		printf("*** CGPADDR:%s\r\n",ptr);
+		printf("*** CGPADDR:%c\r\n",ptr[1]);
+		
+//		sprintf(str,"AT+CGPADDR=%c\r\n",ptr[1]);
+//		res = make_sure(str, "+CGPADDR:", 1);
 		
 		res = make_sure("AT+CSQ\r\n", "+CSQ:", 5);
 		printf("CSQ : %s\r\n",res);
@@ -186,8 +169,7 @@ int main(void)
 		res = make_sure("AT+QICFG=\"viewmode\",1\r\n", "OK", 1);
 
 		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "+QIURC:", 5);
-		
-        printf(" *****command:%s\r\n",strstr(res,"recv"));
+        printf(" *****command:%s\r\n",strstr(res,"recv\",")+strlen("recv\","));
 		
 		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE", 1);
 		
