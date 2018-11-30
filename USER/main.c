@@ -62,7 +62,7 @@ char * make_sure(char *sendstr , char *backmark , int tst)
 		for(int i =0 ;i<tst;i++)
 		{					
 			uart_data_write(sendstr, strlen(sendstr), 0);	
-			for(int i =0 ;i<40;i++)
+			for(int i =0 ;i<10;i++)
 			{	
 				memset(recbuf,0x0,RECV_BUF_LEN);					
 				rets = uart_data_read(recbuf, RECV_BUF_LEN, 0, 200);
@@ -176,7 +176,8 @@ int main(void)
 
 //		res = make_sure("AT+CIMI\r\n", "OK", 1);
 		
-		res = make_sure("AT+CGPADDR=0\r\n", "+CGPADDR:", 1);
+		res = make_sure("AT+CGPADDR=?\r\n", "+CGPADDR:", 1);
+		
 		printf("*** CGPADDR:%s\r\n",res);
 		
 		res = make_sure("AT+CSQ\r\n", "+CSQ:", 5);
@@ -198,16 +199,14 @@ int main(void)
 		
 		res = make_sure("AT+QIOPEN=1,0,\"TCP\",\"120.79.63.76\",17799,0,1\r\n", "+QIOPEN", 5);
 	
-		res = make_sure("AT+QISTATE=1,0\r\n", "+QISTATE", 3);
+		res = make_sure("AT+QISTATE=1,0\r\n", "+QISTATE", 1);
 
-		res = make_sure("AT+QICFG=\"viewmode\",1\r\n", "OK", 3);
+		res = make_sure("AT+QICFG=\"viewmode\",1\r\n", "OK", 1);
 
-		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "recv", 5);
-		char *comm;
-		memcpy(comm,res+2,strlen(res)-2);
-        printf(" ***** the command:%s\r\n",comm);
+		res = make_sure("AT+QISEND=0,12,\"012345678910\"\r\n", "+QIURC", 5);
+        printf(" *****command:%s\r\n",res);
 		
-		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE", 2);
+		res = make_sure("AT+QICLOSE=0\r\n", "CLOSE OK", 1);
 		
 	sleep(1);	
 	utimer_sleep(10);
