@@ -84,7 +84,7 @@ int init(void)
 	WKUP_Pin_Init();
 	
 	init_utimer();
-	init_task();
+	//init_task();
 	init_mem();
 	init_uart2_buffer();
 	modem_poweron();	

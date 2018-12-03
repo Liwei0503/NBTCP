@@ -1,8 +1,8 @@
-#include "utimer.h"
-#include "task.h"
+
+
 #include <string.h>
 #include "bsp.h"
-
+#include "utimer.h"
 
 unsigned int system_second = 0;
 
@@ -33,11 +33,9 @@ void run_utimer(void *p)
         if (timerlist[i].type == 1)
         {
           timerlist[i].enable = 0;
-          //
         }
       }
     }
-    //
   }
 	
 	//100ms¼ÆÊýÆ÷
@@ -66,7 +64,7 @@ void systick_handle(void)
 	if (systick_cnt >= 10)
 	{
 		systick_cnt = 0;
-		post_task(run_utimer,0);
+		//post_task(run_utimer,0);
 		for(i=0;i<TIMER_100MS_CNT_LEN;i++)
 		{
 			__time_100ms_cnt[i] ++;
